@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retail Analytics - Customer Movement Tracker</title>
+    <style>
+      :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #3498db;
+        --accent-color: #e74c3c;
+        --background-color: #f5f6fa;
+        --card-color: #ffffff;
+        --text-color: #2c3e50;
+        --border-color: #dcdde1;
+        --success-color: #27ae60;
+        --chart-color-1: #3498db;
+        --chart-color-2: #e74c3c;
+        --chart-color-3: #2ecc71;
+        --chart-color-4: #f1c40f;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+      }
+
+      body {
+        background-color: var(--background-color);
+        color: var(--text-color);
+        line-height: 1.6;
+      }
+
+      header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" fill="rgba(255,255,255,0.05)"/></svg>');
+        opacity: 0.1;
+      }
+
+      header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        position: relative;
+      }
+
+      header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      main {
+        padding: 2rem;
+        max-width: 95%;
+        margin: 0 auto;
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: 250px minmax(800px, 3fr) 250px;
+        gap: 1.5rem;
+        padding: 1.5rem;
+      }
+
+      .upload-section {
+        background: var(--card-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+      }
+
+      .upload-section:hover {
+        transform: translateY(-5px);
+      }
+
+      .upload-section h2 {
+        font-size: 1.2rem;
+        margin-bottom: 1.5rem;
+        color: var(--primary-color);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .upload-section h2::before {
+        content: '📊';
+        font-size: 1.4rem;
+      }
+
+      .upload-zone {
+        border: 2px dashed var(--secondary-color);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(52, 152, 219, 0.05);
+      }
+
+      .upload-zone:hover {
+        border-color: var(--accent-color);
+        background: rgba(231, 76, 60, 0.05);
+      }
+
+      .upload-content svg {
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+      }
+
+      .upload-content p {
+        font-size: 0.9rem;
+        color: var(--text-color);
+      }
+
+      .view-section {
+        background: var(--card-color);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        min-height: 700px;
+        width: 100%;
+      }
+
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--background-color);
+        padding: 0 1rem;
+      }
+
+      .tab {
+        padding: 1rem 2rem;
+        font-weight: 500;
+        color: var(--text-color);
+        position: relative;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        opacity: 0.7;
+        background: none;
+        border: none;
+      }
+
+      .tab:hover {
+        color: var(--secondary-color);
+        opacity: 1;
+      }
+
+      .tab.active {
+        color: var(--secondary-color);
+        opacity: 1;
+        font-weight: 600;
+      }
+
+      .tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--secondary-color);
+      }
+
+      .view {
+        display: none;
+        padding: 1.5rem;
+        height: 100%;
+      }
+
+      .view.active {
+        display: block;
+      }
+
+      .video-container {
+        position: relative;
+        width: 100%;
+        margin-bottom: 1rem;
+        height: 600px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--background-color);
+        border-radius: 8px;
+      }
+
+      #store-video,
+      #tracking-canvas {
+        width: auto;
+        height: auto;
+        max-width: 95%;
+        max-height: 95%;
+        border-radius: 4px;
+      }
+
+      #tracking-canvas {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      #heatmap-canvas {
+        width: auto;
+        height: auto;
+        max-width: 95%;
+        max-height: 95%;
+        border-radius: 4px;
+        display: block;
+        margin: 0 auto;
+      }
+
+      .heatmap-container {
+        width: 100%;
+        height: 600px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--background-color);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      }
+
+      .controls {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      button {
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      button:hover {
+        background: var(--primary-color);
+        transform: translateY(-2px);
+      }
+
+      button:disabled {
+        background-color: var(--border-color);
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .analytics-panel {
+        background: var(--card-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .analytics-panel h2 {
+        font-size: 1.2rem;
+        margin-bottom: 1.5rem;
+        color: var(--primary-color);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .analytics-panel h2::before {
+        content: '📊';
+        font-size: 1.4rem;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .metric-card {
+        background: var(--card-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .metric-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .metric-card h3 {
+        font-size: 0.9rem;
+        color: var(--text-color);
+        opacity: 0.8;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+
+      .metric-card p {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      .detailed-analytics h3 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        color: var(--secondary-color);
+      }
+
+      .chart-container {
+        background-color: var(--background-color);
+        border-radius: 8px;
+        padding: 1rem;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .placeholder-chart {
+        color: #999;
+        font-size: 0.9rem;
+      }
+
+      footer {
+        text-align: center;
+        padding: 0.8rem;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        margin-top: 1rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .footer-content {
+        position: relative;
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
+      }
+
+      .footer-logo {
+        font-size: 1.2rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.1rem;
+      }
+
+      .footer-tagline {
+        font-size: 0.8rem;
+        opacity: 0.8;
+        margin-bottom: 0.2rem;
+      }
+
+      .footer-copyright {
+        opacity: 0.6;
+        font-size: 0.75rem;
+        padding-top: 0.1rem;
+        width: 100%;
+        text-align: center;
+      }
+
+      .progress-container {
+        width: 100%;
+        background-color: var(--background-color);
+        border-radius: 8px;
+        margin: 1rem 0;
+        overflow: hidden;
+        display: none;
+      }
+
+      #progressBar {
+        height: 8px;
+        background: linear-gradient(90deg, var(--secondary-color), var(--accent-color));
+        border-radius: 8px;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      .heatmap-legend {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px;
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .legend-title {
+        margin-bottom: 5px;
+        font-size: 0.8rem;
+      }
+
+      .legend-gradient {
+        width: 20px;
+        height: 100px;
+        background: linear-gradient(
+          to top,
+          rgba(255, 0, 0, 1),
+          rgba(255, 255, 0, 0.5)
+        );
+        border: 1px solid white;
+      }
+
+      .legend-labels {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        font-size: 0.7rem;
+        margin-top: 5px;
+      }
+
+      .heatmap-title-container,
+      .heatmap-title,
+      .heatmap-date,
+      .heatmap-info {
+        display: none;
+      }
+
+      .visualization-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-top: 2rem;
+        width: 100%;
+      }
+
+      .visualization-card {
+        background: var(--card-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+      }
+
+      .visualization-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .visualization-card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .visualization-card canvas {
+        width: 100% !important;
+        height: 250px !important;
+      }
+
+      @media (min-width: 1600px) {
+        main {
+          max-width: 98%;
+        }
+
+        .dashboard {
+          grid-template-columns: 300px minmax(1000px, 4fr) 300px;
+        }
+
+        .video-container,
+        .heatmap-container {
+          height: 700px;
+        }
+
+        .visualization-card {
+          height: 350px;
+        }
+
+        .visualization-card canvas {
+          height: 300px !important;
+        }
+      }
+
+      @media (min-width: 1920px) {
+        .dashboard {
+          grid-template-columns: 350px minmax(1200px, 5fr) 350px;
+        }
+
+        .video-container,
+        .heatmap-container {
+          height: 800px;
+        }
+      }
+
+      .loading-model {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(44, 62, 80, 0.95);
+        color: white;
+        padding: 1.5rem 2.5rem;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        z-index: 100;
+        text-align: center;
+        backdrop-filter: blur(5px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .loading-model.active {
+        display: block;
+      }
+
+      .loading-model::after {
+        content: '';
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        margin-left: 10px;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <header>
+      <h1>Track-a-Lakshmi</h1>
+      <p>Track customer movement patterns to optimize store layout</p>
+    </header>
+
+    <main>
+      <div class="dashboard">
+        <div class="upload-section">
+          <h2>Upload Store Video</h2>
+          <div id="upload-zone" class="upload-zone">
+            <label for="video-input">
+              <div class="upload-content">
+                <svg
+                  width="50"
+                  height="50"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <p>Drag & drop video or click to browse</p>
+              </div>
+              <input type="file" id="video-input" accept="video/*" hidden />
+            </label>
+          </div>
+          <div class="progress-container">
+            <div id="progressBar">0%</div>
+          </div>
+        </div>
+
+        <div class="view-section">
+          <div class="tabs">
+            <button id="tracking-tab" class="tab active">Tracking View</button>
+            <button id="heatmap-tab" class="tab">Heatmap View</button>
+          </div>
+
+          <div id="tracking-view" class="view active">
+            <div class="video-container">
+              <video id="store-video" playsinline muted></video>
+              <canvas id="tracking-canvas"></canvas>
+            </div>
+            <div class="controls">
+              <button id="play-button">Play</button>
+              <button id="process-button" disabled>Process Video</button>
+            </div>
+          </div>
+
+          <div id="heatmap-view" class="view">
+            <div class="video-container">
+              <canvas id="heatmap-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="analytics-panel">
+          <h2>Analytics Overview</h2>
+          <div class="metrics">
+            <div class="metric-card">
+              <h3>Total Visitors</h3>
+              <p id="total-visitors">0</p>
+            </div>
+            <div class="metric-card">
+              <h3>Avg. Time Spent</h3>
+              <p id="avg-time"><span>0</span> seconds</p>
+            </div>
+            <div class="metric-card">
+              <h3>Popular Areas</h3>
+              <p id="popular-areas">In progress</p>
+            </div>
+            <div class="metric-card">
+              <h3>Peak Hours</h3>
+              <p id="peak-hours">0</p>
+            </div>
+          </div>
+          <div class="visualization-grid">
+            <div class="visualization-card">
+              <h3>Visitor Flow</h3>
+              <canvas id="visitor-flow-chart"></canvas>
+            </div>
+            <div class="visualization-card">
+              <h3>Dwell Time Distribution</h3>
+              <canvas id="dwell-time-chart"></canvas>
+            </div>
+            <div class="visualization-card">
+              <h3>Zone Activity</h3>
+              <canvas id="zone-activity-chart"></canvas>
+            </div>
+            <div class="visualization-card">
+              <h3>Traffic Density</h3>
+              <canvas id="traffic-density-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-content">
+        <div class="footer-logo">Track-a-Lakshmi</div>
+        <div class="footer-tagline">Intelligent Retail Analytics Solution</div>
+        <div class="footer-copyright">
+          © 2024 Track-a-Lakshmi. All rights reserved.
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.20.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      // DOM elements
+      const videoInput = document.getElementById("video-input");
+      const uploadZone = document.getElementById("upload-zone");
+      const storeVideo = document.getElementById("store-video");
+      const trackingCanvas = document.getElementById("tracking-canvas");
+      const trackingCtx = trackingCanvas.getContext("2d");
+      const heatmapCanvas = document.getElementById("heatmap-canvas");
+      const heatmapCtx = heatmapCanvas.getContext("2d");
+      const playButton = document.getElementById("play-button");
+      const processButton = document.getElementById("process-button");
+      const progressBar = document.getElementById("progressBar");
+      const progressContainer = document.querySelector(".progress-container");
+      const trackingTab = document.getElementById("tracking-tab");
+      const heatmapTab = document.getElementById("heatmap-tab");
+      const trackingView = document.getElementById("tracking-view");
+      const heatmapView = document.getElementById("heatmap-view");
+
+      // Variables
+      let model;
+      let isModelLoading = false;
+      let isModelLoaded = false;
+      let personPositions = [];
+      let personTrackingData = []; // Stores all tracked persons data
+      let trackingIntervalId = null;
+      let lastProcessedTime = 0;
+      let videoDuration = 0;
+      let videoWidth = 0;
+      let videoHeight = 0;
+      let frameRate = 5;
+      let backgroundFrame = null;
+      let isProcessing = false;
+      let isPlaying = false;
+
+      const PROCESS_INTERVAL = 100; // Process frames every 100ms
+      const PERSON_DETECTION_THRESHOLD = 0.6; // Confidence threshold
+
+      // Event listeners
+      videoInput.addEventListener("change", handleVideoUpload);
+      uploadZone.addEventListener("dragover", handleDragOver);
+      uploadZone.addEventListener("drop", handleDrop);
+      playButton.addEventListener("click", togglePlay);
+      processButton.addEventListener("click", processVideo);
+      trackingTab.addEventListener("click", () => switchTab("tracking"));
+      heatmapTab.addEventListener("click", () => switchTab("heatmap"));
+
+      // Initialize TensorFlow.js model
+      async function loadModel() {
+        if (isModelLoading || isModelLoaded) return;
+        
+        isModelLoading = true;
+        showModelLoadingIndicator(true);
+        
+        try {
+          console.log("Loading COCO-SSD model...");
+          model = await cocoSsd.load();
+          isModelLoaded = true;
+          console.log("Person detection model loaded successfully");
+          processButton.disabled = false;
+        } catch (error) {
+          console.error("Error loading model:", error);
+          alert("Failed to load person detection model. Please try again.");
+        } finally {
+          isModelLoading = false;
+          showModelLoadingIndicator(false);
+        }
+      }
+
+      // Load model when page loads
+      loadModel();
+
+      // Helper to show model loading indicator
+      function showModelLoadingIndicator(isLoading) {
+        let loadingIndicator = document.querySelector('.loading-model');
+        if (!loadingIndicator) {
+          loadingIndicator = document.createElement('div');
+          loadingIndicator.className = 'loading-model';
+          loadingIndicator.textContent = 'Loading person detection model...';
+          document.querySelector('.video-container').appendChild(loadingIndicator);
+        }
+        loadingIndicator.classList.toggle('active', isLoading);
+      }
+
+      // Handle drag over
+      function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZone.style.borderColor = "#4fc3f7";
+        uploadZone.style.backgroundColor = "rgba(79, 195, 247, 0.1)";
+      }
+
+      // Handle drop
+      function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZone.style.borderColor = "#e0e0e0";
+        uploadZone.style.backgroundColor = "transparent";
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.includes("video")) {
+          videoInput.files = files;
+          handleVideoUpload({ target: { files: files } });
+        }
+      }
+
+      // Handle video upload
+      function handleVideoUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const videoURL = URL.createObjectURL(file);
+        storeVideo.src = videoURL;
+        processButton.disabled = false;
+
+        storeVideo.onloadedmetadata = () => {
+          videoWidth = storeVideo.videoWidth;
+          videoHeight = storeVideo.videoHeight;
+          videoDuration = storeVideo.duration;
+
+          // Set canvas dimensions
+          trackingCanvas.width = videoWidth;
+          trackingCanvas.height = videoHeight;
+          heatmapCanvas.width = videoWidth;
+          heatmapCanvas.height = videoHeight;
+
+          console.log(`Video dimensions: ${videoWidth}x${videoHeight}`);
+          console.log(`Video duration: ${videoDuration} seconds`);
+        };
+      }
+
+      // Toggle video play/pause
+      function togglePlay() {
+        if (isPlaying) {
+          storeVideo.pause();
+          playButton.textContent = "Play";
+        } else {
+          storeVideo.play();
+          playButton.textContent = "Pause";
+        }
+        isPlaying = !isPlaying;
+      }
+
+      // Process video frames
+      async function processVideo() {
+        if (!storeVideo.videoWidth || isProcessing) {
+          console.log("Video not ready or already processing");
+          return;
+        }
+
+        if (!model || !isModelLoaded) {
+          console.log("Model not loaded, attempting to load...");
+          await loadModel();
+        }
+
+        console.log("Starting video processing...");
+        isProcessing = true;
+        processButton.disabled = true;
+        personPositions = [];
+        personTrackingData = [];
+        progressContainer.style.display = "block";
+
+        // Calculate total frames and frame interval
+        const frameStep = 1 / frameRate; // Time between frames in seconds
+        const totalFrames = Math.floor(videoDuration * frameRate);
+        let processedFrames = 0;
+
+        console.log(`Video duration: ${videoDuration}s, Total frames: ${totalFrames}, Frame step: ${frameStep}s`);
+
+        try {
+          // Save first frame as background
+          storeVideo.currentTime = 0;
+          await new Promise((resolve) => {
+            storeVideo.onseeked = resolve;
+          });
+
+          trackingCanvas.width = videoWidth;
+          trackingCanvas.height = videoHeight;
+          trackingCtx.drawImage(storeVideo, 0, 0, videoWidth, videoHeight);
+          backgroundFrame = new Image();
+          backgroundFrame.src = trackingCanvas.toDataURL();
+
+          // Process frames
+          for (let currentTime = 0; currentTime <= videoDuration && isProcessing; currentTime += frameStep) {
+            // Set video to current time
+            storeVideo.currentTime = currentTime;
+            await new Promise((resolve) => {
+              storeVideo.onseeked = async () => {
+                try {
+                  console.log(`Processing frame ${processedFrames + 1}/${totalFrames} at ${currentTime.toFixed(2)}s`);
+                  
+                  // Detect objects in frame
+                  const predictions = await model.detect(storeVideo);
+                  console.log(`Found ${predictions.length} objects in frame`);
+                  
+                  // Filter for person detections with good confidence
+                  const persons = predictions.filter(prediction => 
+                    prediction.class === 'person' && 
+                    prediction.score >= PERSON_DETECTION_THRESHOLD
+                  );
+                  console.log(`Detected ${persons.length} persons in frame`);
+
+                  // Track persons across frames
+                  trackPersons(persons, performance.now(), videoWidth, videoHeight);
+                  
+                  // Clear canvas and draw tracking results
+                  trackingCtx.clearRect(0, 0, videoWidth, videoHeight);
+                  drawTrackingResults(trackingCtx, videoWidth, videoHeight);
+
+                  // Store positions for heatmap
+                  persons.forEach(person => {
+                    const bbox = person.bbox;
+                    const centerX = bbox[0] + bbox[2]/2;
+                    const centerY = bbox[1] + bbox[3]/2;
+                    personPositions.push({ x: centerX, y: centerY });
+                  });
+
+                  // Update progress
+                  processedFrames++;
+                  const progress = Math.min(100, Math.round((processedFrames / totalFrames) * 100));
+                  progressBar.style.width = `${progress}%`;
+                  progressBar.textContent = `${progress}%`;
+                  console.log(`Progress: ${progress}%`);
+
+                } catch (error) {
+                  console.error("Error processing frame:", error);
+                }
+                resolve();
+              };
+            });
+          }
+
+          // Ensure progress shows 100%
+          progressBar.style.width = '100%';
+          progressBar.textContent = '100%';
+
+          console.log(`Processing complete. Total positions: ${personPositions.length}, Total tracks: ${personTrackingData.length}`);
+          
+          if (personPositions.length === 0) {
+            console.log("No persons detected in video");
+            alert("No persons were detected in the video. Please try a different video or adjust the detection threshold.");
+            return;
+          }
+
+        } catch (error) {
+          console.error("Error during video processing:", error);
+          alert("An error occurred while processing the video. Please try again.");
+        } finally {
+          isProcessing = false;
+          processButton.disabled = false;
+        }
+
+        // Generate heatmap and update analytics
+        generateHeatmap();
+        updateAnalytics();
+        switchTab("heatmap");
+      }
+
+      // Track persons across frames
+      function trackPersons(detectedPersons, timestamp, videoWidth, videoHeight) {
+        if (personTrackingData.length === 0) {
+          detectedPersons.forEach((person, index) => {
+            const bbox = person.bbox;
+            const centerX = bbox[0] + bbox[2]/2;
+            const centerY = bbox[1] + bbox[3]/2;
+            
+            personTrackingData.push({
+              id: `person_${index}`,
+              path: [{
+                x: centerX / videoWidth,
+                y: centerY / videoHeight,
+                timestamp: timestamp
+              }],
+              lastSeen: timestamp,
+              bbox: bbox,
+              active: true
+            });
+          });
+          return;
+        }
+        
+        const assignedTracks = new Set();
+        
+        detectedPersons.forEach(person => {
+          const bbox = person.bbox;
+          const centerX = bbox[0] + bbox[2]/2;
+          const centerY = bbox[1] + bbox[3]/2;
+          
+          let closestTrackIndex = -1;
+          let closestDistance = Infinity;
+          
+          personTrackingData.forEach((track, index) => {
+            if (!track.active) return;
+            
+            const lastPoint = track.path[track.path.length - 1];
+            const trackX = lastPoint.x * videoWidth;
+            const trackY = lastPoint.y * videoHeight;
+            
+            const distance = Math.sqrt(
+              Math.pow(centerX - trackX, 2) + 
+              Math.pow(centerY - trackY, 2)
+            );
+            
+            if (distance < 100 && distance < closestDistance) {
+              closestDistance = distance;
+              closestTrackIndex = index;
+            }
+          });
+          
+          if (closestTrackIndex >= 0 && !assignedTracks.has(closestTrackIndex)) {
+            const track = personTrackingData[closestTrackIndex];
+            track.path.push({
+              x: centerX / videoWidth,
+              y: centerY / videoHeight,
+              timestamp: timestamp
+            });
+            track.lastSeen = timestamp;
+            track.bbox = bbox;
+            assignedTracks.add(closestTrackIndex);
+          } else {
+            personTrackingData.push({
+              id: `person_${personTrackingData.length}`,
+              path: [{
+                x: centerX / videoWidth,
+                y: centerY / videoHeight,
+                timestamp: timestamp
+              }],
+              lastSeen: timestamp,
+              bbox: bbox,
+              active: true
+            });
+          }
+        });
+        
+        personTrackingData.forEach(track => {
+          if (timestamp - track.lastSeen > 2000) {
+            track.active = false;
+          }
+        });
+      }
+
+      // Draw tracking results on canvas
+      function drawTrackingResults(ctx, canvasWidth, canvasHeight) {
+        personTrackingData.forEach(track => {
+          if (track.active && track.bbox) {
+            const [x, y, width, height] = track.bbox;
+            const scaledX = (x / track.path[0].x) * canvasWidth;
+            const scaledY = (y / track.path[0].y) * canvasHeight;
+            const scaledWidth = (width / track.path[0].x) * canvasWidth;
+            const scaledHeight = (height / track.path[0].y) * canvasHeight;
+            
+            ctx.strokeStyle = '#34c759';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
+            
+            ctx.fillStyle = '#34c759';
+            ctx.fillRect(scaledX, scaledY - 20, 60, 20);
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.fillText(track.id, scaledX + 5, scaledY - 5);
+          }
+          
+          if (track.path.length > 1) {
+            ctx.beginPath();
+            const firstPoint = track.path[0];
+            ctx.moveTo(firstPoint.x * canvasWidth, firstPoint.y * canvasHeight);
+            
+            for (let i = 1; i < track.path.length; i++) {
+              const point = track.path[i];
+              ctx.lineTo(point.x * canvasWidth, point.y * canvasHeight);
+            }
+            
+            ctx.strokeStyle = track.active ? '#34c759' : '#8e8e93';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            const lastPoint = track.path[track.path.length - 1];
+            ctx.fillStyle = track.active ? '#34c759' : '#8e8e93';
+            ctx.beginPath();
+            ctx.arc(
+              lastPoint.x * canvasWidth, 
+              lastPoint.y * canvasHeight, 
+              5, 0, Math.PI * 2
+            );
+            ctx.fill();
+          }
+        });
+      }
+
+      // Update analytics with tracking data
+      function updateAnalytics() {
+        if (personTrackingData.length === 0) return;
+
+        const analytics = calculateAnalytics();
+        
+        document.getElementById("total-visitors").textContent = analytics.totalVisitors;
+        document.getElementById("avg-time").textContent = `${analytics.averageTimeSeconds} seconds`;
+        document.getElementById("popular-areas").textContent = analytics.popularAreas;
+        document.getElementById("peak-hours").textContent = analytics.peakHours;
+
+        // Update visualizations
+        updateVisualizations(analytics);
+      }
+
+      function updateVisualizations(analytics) {
+        // Visitor Flow Chart
+        new Chart(document.getElementById('visitor-flow-chart'), {
+          type: 'line',
+          data: {
+            labels: Array.from({length: personTrackingData.length}, (_, i) => `T${i}`),
+            datasets: [{
+              label: 'Visitors Over Time',
+              data: personTrackingData.map(track => track.path.length),
+              borderColor: '#4a6fa5',
+              tension: 0.4,
+              fill: false
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Number of Visitors'
+                }
+              }
+            }
+          }
+        });
+
+        // Dwell Time Distribution
+        const dwellTimes = personTrackingData.map(track => {
+          if (track.path.length >= 2) {
+            return (track.path[track.path.length - 1].timestamp - track.path[0].timestamp) / 1000;
+          }
+          return 0;
+        }).filter(time => time > 0);
+
+        new Chart(document.getElementById('dwell-time-chart'), {
+          type: 'bar',
+          data: {
+            labels: ['0-10s', '10-30s', '30-60s', '60s+'],
+            datasets: [{
+              label: 'Visitors',
+              data: [
+                dwellTimes.filter(t => t <= 10).length,
+                dwellTimes.filter(t => t > 10 && t <= 30).length,
+                dwellTimes.filter(t => t > 30 && t <= 60).length,
+                dwellTimes.filter(t => t > 60).length
+              ],
+              backgroundColor: '#4fc3f7'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Number of Visitors'
+                }
+              }
+            }
+          }
+        });
+
+        // Zone Activity Chart
+        const zoneData = Array(9).fill(0);
+        personTrackingData.forEach(track => {
+          track.path.forEach(point => {
+            const gridX = Math.floor(point.x * 3);
+            const gridY = Math.floor(point.y * 3);
+            if (gridX >= 0 && gridX < 3 && gridY >= 0 && gridY < 3) {
+              zoneData[gridY * 3 + gridX]++;
+            }
+          });
+        });
+
+        new Chart(document.getElementById('zone-activity-chart'), {
+          type: 'radar',
+          data: {
+            labels: ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5', 'Zone 6', 'Zone 7', 'Zone 8', 'Zone 9'],
+            datasets: [{
+              label: 'Activity Level',
+              data: zoneData,
+              backgroundColor: 'rgba(79, 195, 247, 0.2)',
+              borderColor: '#4fc3f7',
+              pointBackgroundColor: '#4fc3f7'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+
+        // Traffic Density Chart
+        const timeSlots = Array(24).fill(0);
+        personTrackingData.forEach(track => {
+          track.path.forEach(point => {
+            const hour = new Date(point.timestamp).getHours();
+            timeSlots[hour]++;
+          });
+        });
+
+        new Chart(document.getElementById('traffic-density-chart'), {
+          type: 'bar',
+          data: {
+            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+            datasets: [{
+              label: 'Traffic',
+              data: timeSlots,
+              backgroundColor: '#34c759'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Traffic Count'
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Calculate analytics from tracking data
+      function calculateAnalytics() {
+        const totalVisitors = personTrackingData.length;
+        
+        let totalTime = 0;
+        personTrackingData.forEach(track => {
+          if (track.path.length >= 2) {
+            const startTime = track.path[0].timestamp;
+            const endTime = track.path[track.path.length - 1].timestamp;
+            totalTime += (endTime - startTime);
+          }
+        });
+        const averageTimeSeconds = Math.round((totalVisitors > 0 ? totalTime / totalVisitors : 0) / 1000);
+        
+        let popularAreas = "Not enough data";
+        if (personTrackingData.length > 0) {
+          const areaGrid = Array(3).fill(0).map(() => Array(3).fill(0));
+          
+          personTrackingData.forEach(track => {
+            track.path.forEach(point => {
+              const gridX = Math.floor(point.x * 3);
+              const gridY = Math.floor(point.y * 3);
+              
+              if (gridX >= 0 && gridX < 3 && gridY >= 0 && gridY < 3) {
+                areaGrid[gridY][gridX]++;
+              }
+            });
+          });
+          
+          let maxCount = 0;
+          let maxArea = [0, 0];
+          
+          for (let y = 0; y < 3; y++) {
+            for (let x = 0; x < 3; x++) {
+              if (areaGrid[y][x] > maxCount) {
+                maxCount = areaGrid[y][x];
+                maxArea = [x, y];
+              }
+            }
+          }
+          
+          const areas = [
+            ["Top Left", "Top Center", "Top Right"],
+            ["Middle Left", "Center", "Middle Right"],
+            ["Bottom Left", "Bottom Center", "Bottom Right"]
+          ];
+          
+          popularAreas = areas[maxArea[1]][maxArea[0]];
+        }
+        
+        let peakHours = "No data";
+        if (personTrackingData.length > 0) {
+          let minTime = Infinity;
+          let maxTime = 0;
+          
+          personTrackingData.forEach(track => {
+            track.path.forEach(point => {
+              minTime = Math.min(minTime, point.timestamp);
+              maxTime = Math.max(maxTime, point.timestamp);
+            });
+          });
+          
+          if (maxTime > minTime) {
+            const timeSlots = [
+              { label: "Beginning", count: 0 },
+              { label: "Middle", count: 0 },
+              { label: "End", count: 0 }
+            ];
+            
+            const timeRange = maxTime - minTime;
+            personTrackingData.forEach(track => {
+              track.path.forEach(point => {
+                const normalizedTime = (point.timestamp - minTime) / timeRange;
+                const slotIndex = Math.min(2, Math.floor(normalizedTime * 3));
+                timeSlots[slotIndex].count++;
+              });
+            });
+            
+            let maxSlot = timeSlots[0];
+            timeSlots.forEach(slot => {
+              if (slot.count > maxSlot.count) {
+                maxSlot = slot;
+              }
+            });
+            
+            peakHours = maxSlot.label;
+          }
+        }
+        
+        return {
+          totalVisitors,
+          averageTimeSeconds,
+          popularAreas,
+          peakHours
+        };
+      }
+
+      // Generate heatmap using radial gradients
+      function generateHeatmap() {
+        if (personPositions.length === 0) {
+          console.log("No person positions available for heatmap generation");
+          alert("No person data available. Please process the video first.");
+          return;
+        }
+
+        console.log(`Generating heatmap from ${personPositions.length} positions`);
+
+        // Clear heatmap canvas
+        heatmapCtx.clearRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
+
+        // Draw background frame
+        if (backgroundFrame) {
+          heatmapCtx.drawImage(backgroundFrame, 0, 0, videoWidth, videoHeight);
+        }
+
+        // Create an off-screen canvas for the heatmap
+        const heatmapBuffer = document.createElement('canvas');
+        heatmapBuffer.width = videoWidth;
+        heatmapBuffer.height = videoHeight;
+        const heatCtx = heatmapBuffer.getContext('2d');
+
+        // Calculate radius based on video size
+        const radius = Math.max(videoWidth, videoHeight) / 20;
+        const intensity = 0.2;
+
+        console.log(`Using radius: ${radius}, intensity: ${intensity}`);
+
+        // Draw points with gradients
+        personPositions.forEach((point, index) => {
+          // Create radial gradient
+          const gradient = heatCtx.createRadialGradient(
+            point.x, point.y, 0,
+            point.x, point.y, radius
+          );
+          gradient.addColorStop(0, `rgba(255, 0, 0, ${intensity})`);
+          gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+
+          // Draw gradient circle
+          heatCtx.fillStyle = gradient;
+          heatCtx.beginPath();
+          heatCtx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+          heatCtx.fill();
+        });
+
+        // Overlay the heatmap on top of the original image
+        heatmapCtx.globalAlpha = 0.7;
+        heatmapCtx.drawImage(heatmapBuffer, 0, 0);
+        heatmapCtx.globalAlpha = 1.0;
+
+        console.log("Heatmap generation complete");
+      }
+
+      // Switch between tabs
+      function switchTab(tab) {
+        trackingView.classList.remove("active");
+        heatmapView.classList.remove("active");
+        trackingTab.classList.remove("active");
+        heatmapTab.classList.remove("active");
+
+        if (tab === "tracking") {
+          trackingView.classList.add("active");
+          trackingTab.classList.add("active");
+        } else if (tab === "heatmap") {
+          heatmapView.classList.add("active");
+          heatmapTab.classList.add("active");
+        }
+      }
+    </script>
+  </body>
+</html>
